@@ -13,7 +13,8 @@ public class LoginPage extends BasePage {
         super(page);
     }
     public void navigate() {
-        page.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED).setTimeout(60000));
+    	Page.NavigateOptions navOptions = new Page.NavigateOptions().setWaitUntil(WaitUntilState.LOAD).setTimeout(60000);
+        page.navigate(url, navOptions);
     }
 
     public void login(String username, String password) {

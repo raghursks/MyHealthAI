@@ -18,10 +18,11 @@ public class CommunicationModal extends BasePage {
     private final String popupCount = ".modal-body .badge.bg-primary";
     private final String popupYes = "button.btn.btn-primary.px-4";
     private final String toField = "#toField";
-    private final String subjectField = "#subject";
-    private final String bodyField = "#body";
-    private final String sendButton = "#sendButton";
+    private final String subjectField = "input[formcontrolname='subject']";
+    private final String bodyField = "div[aria-label='Editor editing area: main']";
+    private final String sendButton = "button:has-text('Send')";
     private final String okButton = "button.swal2-confirm:has-text('OK')";
+    private final String emailAlertokButton = "button.swal2-confirm";
     private final String popupModal = "div.modal-content:has(h5:has-text('Confirm Save Group'))";
 
     public CommunicationModal(Page page) {
@@ -112,6 +113,14 @@ public class CommunicationModal extends BasePage {
     public void sendEmail(String subject, String body) {
         fill(subjectField, subject);
         fill(bodyField, body);
-        click(sendButton);
+        Locator emailsendButton = page.locator(sendButton);
+        emailsendButton.waitFor(new Locator.WaitForOptions().setTimeout(5000).setState(WaitForSelectorState.VISIBLE));
+        if (!emailsendButton.isVisible() || !emailsendButton.isEnabled()) {
+            throw new RuntimeException("Send button is not clickable.");
+        }
+        emailsendButton.click();
+        Locator emailok = page.locator(emailAlertokButton);
+        emailok.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(10000));
+        emailok.click(new Locator.ClickOptions().setForce(true));
     }
 }

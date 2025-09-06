@@ -13,7 +13,7 @@ public class DashboardTest extends BaseTest {
 
         // Total Patients
         int tileCount = dashboardPage().getTileCount(dashboardPage().getTotalPatientsTileCountSelector());
-        System.out.println("Tile Count (Total Patients): " + tileCount);
+        System.out.println("Total Patients Tile Count (Total Patients): " + tileCount);
 
         int rowCount = dashboardPage().clickTileAndCount(
                 dashboardPage().getTotalPatientsTileClickSelector(),
@@ -27,9 +27,11 @@ public class DashboardTest extends BaseTest {
 
         // Non‑Consented But Eligible
         //dashboardPage().clickLogo(); // navigate home
-        /*int ncTileCount = dashboardPage().getTileCount(dashboardPage().getNonConsentedTileSelector());
-        int ncRowCount = dashboardPage().clickTileAndCount(dashboardPage().getNonConsentedTileSelector());
+        int ncTileCount = dashboardPage().getTileCount(dashboardPage().getNonConsentedTileCountSelector());
+        System.out.println("NonConsented Tile Count (Total Patients): " + tileCount);
+        int ncRowCount = dashboardPage().clickTileAndCount(dashboardPage().getNonConsentedTileClickSelector(),dashboardPage().getPatientRowsSelector(),
+                dashboardPage().getNextButtonSelector());
         test.pass("Non‑Consented But Eligible tile count: " + ncTileCount);
-        Assert.assertEquals(ncRowCount, ncTileCount, "Row count should match non-consented tile count");*/
+        Assert.assertEquals(ncRowCount, ncTileCount, "Row count should match non-consented tile count");
     }
 }

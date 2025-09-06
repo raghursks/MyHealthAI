@@ -26,4 +26,7 @@ public class GroupPage extends BasePage {
     public int getLatestGroupCount() {
         return Integer.parseInt(textContent(groupListRows + ":last-child " + groupCountColumn).trim());
     }
+    public boolean isGroupPresent(String name) {
+        return page.locator("text=" + name).isVisible();
+    }
 }
