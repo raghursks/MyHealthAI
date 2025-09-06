@@ -1,0 +1,14 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="MyHealthAI Automation Suite">
+    <listeners>
+        <listener class-name="listeners.TestListener"/>
+    </listeners>
+    <test name="Main Tests">
+        <classes>
+            <class name="tests.LoginTest"/>
+            <class name="tests.DashboardTest"/>
+            <class name="tests.CommunicationTest"/>
+            <class name="tests.LogoutTest"/>
+        </classes>
+    </test>
+</suite>
