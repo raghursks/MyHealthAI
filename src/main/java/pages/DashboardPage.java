@@ -9,9 +9,13 @@ public class DashboardPage extends BasePage {
 
     private final String selectAllAcrossPagesLink = "text=Select all 254 patients";
     // Reads the total number value inside the Tile
-    private final String nonConsentedTileCount = "div.card-body:has(p:has-text('Non-Consented But Eligible')) span.counter-value";
+    //private final String nonConsentedTileCount = "div.card-body:has(p:has-text(\"Non-Consented But Eligible\")) span.counter-value";
+    private final String nonConsentedTileCount = "div.card.card-animate:has(p:has-text('Non-Consented But Eligible')) span.counter-value";
+
     // Clicks the tile to navigate to the patient list
-    private final String nonConsentedTileClick = "div.card-body:has(p:has-text('Non-Consented But Eligible'))";
+    //private final String nonConsentedTileClick = "div.card-body:has(p:has-text(\"Non-Consented But Eligible\"))";
+    private final String nonConsentedTileClick = "div.card.card-animate:has(p:has-text('Non-Consented But Eligible'))";
+
     // Read tile count
     private final String totalPatientsTileCount = "div.card-body:has(p:has-text(\"Total Patients\")) span.counter-value";
     // Click tile
@@ -72,7 +76,7 @@ public class DashboardPage extends BasePage {
             // Wait for at least 2 rows to appear
             for (int i = 0; i < 10; i++) {
                 if (rows.count() > 1) break;
-                page.waitForTimeout(500);
+                page.waitForTimeout(1000);
             }
             int rowsOnPage = rows.count();
             System.out.println("Page " + pageIndex + " rows: " + rowsOnPage);
@@ -96,23 +100,21 @@ public class DashboardPage extends BasePage {
 
     public int getTileCount(String tileSelector) {
         Locator tile = page.locator(tileSelector);
-
+        System.out.println("Matching tile elements count: " + tile.count());
         // Wait for the tile to become visible
         tile.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
-
+        page.waitForTimeout(2000);
         String lastValue = "";
         int stableCount = 0;
         int stableAttempts = 0;
-
         for (int i = 1; i <= 20; i++) {  // up to ~20 seconds
             try {
                 String currentText = tile.innerText().trim();
                 System.out.println("Attempt " + i + ": " + currentText);
-
                 // Check if current value is same as last attempt
                 if (currentText.equals(lastValue) && currentText.matches("\\d+")) {
                     stableAttempts++;
-                    if (stableAttempts >= 2) {  // value is stable for 2 checks
+                    if (stableAttempts >= 5) {  // value is stable for 5 checks
                         stableCount = Integer.parseInt(currentText);
                         break;
                     }
@@ -135,20 +137,29 @@ public class DashboardPage extends BasePage {
         throw new RuntimeException("Tile count never stabilized: " + tileSelector);
     }
 
-    public void selectAllExceptOne() {
-        // 1. Select all checkboxes on the current page
+    public int selectAllExceptOne() {
+        // 1. Click "select all" checkbox
         click(selectAllCheckbox);
 
-        // 2. Wait until at least one is selected
-        page.locator("input[type='checkbox']:checked").first()
-                .waitFor(new Locator.WaitForOptions().setTimeout(3000));
+        // 2. Ensure checkboxes are selected (at least 1 should be checked)
+        Locator selectedCheckboxes = page.locator("input[type='checkbox']:checked");
+        selectedCheckboxes.first().waitFor(new Locator.WaitForOptions().setTimeout(3000));
 
-        // 3. Deselect the last row's checkbox (of current page)
-        Locator lastCheckbox = page.locator(lastRowCheckbox);
+        // 3. Get all visible row checkboxes (excluding header)
+        Locator allCheckboxes = page.locator("table tbody input[type='checkbox']");
+        int totalCheckboxes = allCheckboxes.count();
+
+        if (totalCheckboxes == 0) {
+            throw new RuntimeException("No row checkboxes found to select.");
+        }
+
+        // 4. Target the last row checkbox
+        Locator lastCheckbox = allCheckboxes.nth(totalCheckboxes - 1);
         lastCheckbox.waitFor(new Locator.WaitForOptions()
                 .setState(WaitForSelectorState.VISIBLE)
                 .setTimeout(3000));
 
+        // 5. Deselect it if it was selected
         if (lastCheckbox.isChecked()) {
             lastCheckbox.click();
             System.out.println("Deselected last row checkbox.");
@@ -156,12 +167,28 @@ public class DashboardPage extends BasePage {
             System.out.println("Last row checkbox was already not selected.");
         }
 
-        int checkedCount = page.locator("input[type='checkbox']:checked").count();
-        System.out.println("Total selected checkboxes after deselection: " + checkedCount);
+        // 6. Count selected checkboxes (after deselection)
+        int checkedCount = selectedCheckboxes.count();
+        System.out.println("Selected checkboxes after deselection: " + checkedCount);
+
+        return checkedCount;
     }
 
     public void clickCommunication() {
-        click(communicationButton);
+        // After selectAllExceptOne()
+        Locator communicationbtn = page.locator(communicationButton);
+        for (int i = 0; i < 10; i++) {
+            if (communicationbtn.isEnabled()) {
+                break;
+            }
+            page.waitForTimeout(500); // wait 0.5 sec
+        }
+
+        if (!communicationbtn.isEnabled()) {
+            throw new RuntimeException("Communication button not enabled after selection.");
+        }
+        communicationbtn.click();
+
     }
 
     public void clickProfileImage() {

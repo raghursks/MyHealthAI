@@ -14,16 +14,16 @@ public class CommunicationModal extends BasePage {
     private final String groupNameField = ".mt-3 > input[placeholder='Enter the group name']";
     private final String groupListSelection = "button.list-group-item.list-group-item-action.list-item-custom:has-text('Appointment confirmation')";
     private final String saveGroup = "button.btn.btn-primary:has-text('Save Group')";
-    private final String confirmationPopup = ".modal-body"; // or more specific if needed
-    private final String popupCount = ".modal-body .badge.bg-primary";
-    private final String popupYes = "button.btn.btn-primary.px-4";
+    private final String popupModal = "//div[contains(@class,'modal-content')][.//h5[contains(text(),'Confirm Save Group')]]";
+    private final String popupCount = "div.modal-body span.badge";
+    private final String popupYes = "button:has-text('Yes, Save')";
     private final String toField = "#toField";
     private final String subjectField = "input[formcontrolname='subject']";
     private final String bodyField = "div[aria-label='Editor editing area: main']";
     private final String sendButton = "button:has-text('Send')";
     private final String okButton = "button.swal2-confirm:has-text('OK')";
     private final String emailAlertokButton = "button.swal2-confirm";
-    private final String popupModal = "div.modal-content:has(h5:has-text('Confirm Save Group'))";
+
 
     public CommunicationModal(Page page) {
         super(page);
@@ -45,63 +45,96 @@ public class CommunicationModal extends BasePage {
 
     }
 
-/*    public int confirmAndGetCount() {
-        waitForSelector(confirmationPopup);
-        String countText = textContent(popupCount).trim();
-        int count;
-
-        try {
-            count = Integer.parseInt(countText);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Could not parse patient count from confirmation popup: '" + countText + "'");
-        }
-        page.locator(popupYes).waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
-        page.locator(popupYes).click();
-        page.locator(okButton).waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
-        page.locator(okButton).click();
-        return count;
-    }*/
     public int confirmAndGetCount() {
-        // Wait for confirmation popup to appear
-        waitForSelector(confirmationPopup);
-
-        // Wait for the popupCount element to be visible and have non-empty text
-        Locator countLocator = page.locator(popupCount);
-        countLocator.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(5000));
-        String countText = countLocator.textContent().trim();
-
-        int count;
-        try {
-            count = Integer.parseInt(countText);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Could not parse patient count from confirmation popup: '" + countText + "'");
-        }
-        page.screenshot(new Page.ScreenshotOptions().setPath(Paths.get("modal_before_click.png")));
-        /*Locator yesButton = page.locator(popupYes);
-        yesButton.waitFor(new Locator.WaitForOptions().setTimeout(10000).setState(WaitForSelectorState.VISIBLE));
-
-        if (!yesButton.isVisible() || !yesButton.isEnabled()) {
-            throw new RuntimeException("Yes button is not visible or is disabled.");
-        }
-        yesButton.click(new Locator.ClickOptions().setForce(true));
-        page.waitForSelector(popupModal, new Page.WaitForSelectorOptions().setState(WaitForSelectorState.HIDDEN).setTimeout(5000));*/
-        Locator modal = page.locator(confirmationPopup);
+        // 1. Wait for the correct modal
+        Locator modal = page.locator(popupModal).first();
         modal.waitFor(new Locator.WaitForOptions()
-                .setTimeout(5000)
+                .setTimeout(3000)
                 .setState(WaitForSelectorState.VISIBLE));
-        String title = modal.locator("h5.modal-title").innerText();
+
+        // 2. Validate the modal title
+        Locator titleLocator = modal.locator("h5.modal-title");
+        titleLocator.waitFor(new Locator.WaitForOptions()
+                .setTimeout(3000)
+                .setState(WaitForSelectorState.VISIBLE));
+        String title = titleLocator.innerText().trim();
+
         if (!"Confirm Save Group".equals(title)) {
             throw new RuntimeException("Unexpected modal title: " + title);
         }
-        Locator yesButton = modal.locator(popupYes);
-        yesButton.click();
 
-        modal.waitFor(new Locator.WaitForOptions()
-                .setState(WaitForSelectorState.HIDDEN)
+        // 3. Get the patient count from the badge
+        Locator countLocator = modal.locator(popupCount);
+        countLocator.waitFor(new Locator.WaitForOptions()
+                .setTimeout(5000)
+                .setState(WaitForSelectorState.VISIBLE));
+
+        String countText = countLocator.textContent().trim();
+        int count;
+        try {
+            count = Integer.parseInt(countText);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Could not parse patient count from popup: '" + countText + "'");
+        }
+
+        // 4. Take screenshot before clicking
+        page.screenshot(new Page.ScreenshotOptions()
+                .setPath(Paths.get("reports/screenshots/modal_before_click_" + System.currentTimeMillis() + ".png"))
+                .setFullPage(false));
+
+        // 5. Click "Yes, Save"
+        Locator yesButton = modal.locator(popupYes);
+        yesButton.waitFor(new Locator.WaitForOptions()
+                .setState(WaitForSelectorState.VISIBLE)
                 .setTimeout(5000));
+
+        if (!yesButton.isEnabled()) {
+            throw new RuntimeException("Yes button is not enabled.");
+        }
+
+        boolean clicked = false;
+        try {
+            yesButton.click();
+            clicked = true;
+        } catch (Exception e) {
+            System.out.println("Failed to click 'Yes' button: " + e.getMessage());
+        }
+
+        if (!clicked) {
+            throw new RuntimeException("Yes button click did not happen.");
+        } else {
+            System.out.println("'Yes' button was clicked successfully.");
+        }
+        page.waitForTimeout(5000);
+
+        // 6. Wait for modal to disappear
+        try {
+            modal.waitFor(new Locator.WaitForOptions()
+                    .setState(WaitForSelectorState.DETACHED)
+                    .setTimeout(10000));
+        } catch (Exception e) {
+            System.out.println("Modal did not detach, checking if hidden...");
+            try {
+                modal.waitFor(new Locator.WaitForOptions()
+                        .setState(WaitForSelectorState.HIDDEN)
+                        .setTimeout(10000));
+            } catch (Exception ex) {
+                throw new RuntimeException("Modal did not close or hide after clicking Yes button.");
+            }
+        }
+
+        // 7. Click OK button if present
         Locator ok = page.locator(okButton);
-        ok.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(10000));
-        ok.click(new Locator.ClickOptions().setForce(true));
+        ok.waitFor(new Locator.WaitForOptions()
+                .setTimeout(10000)
+                .setState(WaitForSelectorState.VISIBLE));
+
+        if (ok.isVisible() && ok.isEnabled()) {
+            ok.click();
+            System.out.println("Clicked OK button successfully.");
+        } else {
+            System.out.println("OK button not shown. Proceeding without it.");
+        }
         return count;
     }
 

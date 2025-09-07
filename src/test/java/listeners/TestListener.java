@@ -26,9 +26,15 @@ public class TestListener implements ITestListener {
 
     @Override
     public void onTestStart(ITestResult result) {
-        String testName = result.getName();
+        String testName = result.getMethod().getMethodName();
+        BaseTest testInstance = (BaseTest) result.getInstance();
+
+        ExtentTest test = testInstance.getExtent().createTest(testName);
+        testInstance.setTest(test);  // assign ExtentTest instance
+
         System.out.println("Test Started: " + testName);
     }
+
 
     @Override
     public void onTestSuccess(ITestResult result) {
@@ -43,11 +49,19 @@ public class TestListener implements ITestListener {
     public void onTestFailure(ITestResult result) {
         BaseTest testInstance = (BaseTest) result.getInstance();
         ExtentTest test = testInstance.getTest();
-
         test.log(Status.FAIL, "Test Failed: " + result.getName());
         test.fail(result.getThrowable());
 
+        // Attach screenshot
         attachScreenshot(testInstance, test, result.getName(), Status.FAIL);
+
+        // Attach trace file (if it exists)
+        String tracePath = testInstance.getTracePath();
+        if (tracePath != null && new File(tracePath).exists()) {
+            test.info("📎 Trace file: [View in Playwright](file:///" + new File(tracePath).getAbsolutePath() + ")");
+        }
+        // Optional console log
+        System.err.println("Trace available at: " + tracePath);
     }
 
     @Override
