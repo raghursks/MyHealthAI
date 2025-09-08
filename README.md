@@ -1,6 +1,6 @@
 # MyHealthAI - UI Automation Project
 
-This project is a **TestNG-based automation suite** for testing the **MyHealthAI** application using **Selenium WebDriver** and **Extent Reports**. It validates key workflows including login, dashboard tile interaction, patient communication, group creation, and logout functionalities.
+This project is a **TestNG-based automation suite** for testing the **MyHealthAI** application using **Playwright** and **Extent Reports**. It validates key workflows including login, dashboard tile interaction, patient communication, group creation, and logout functionalities.
 
 ---
 
@@ -10,7 +10,7 @@ This project is a **TestNG-based automation suite** for testing the **MyHealthAI
 - **Build Tool:** Maven
 - **Test Framework:** TestNG
 - **Reporting:** Extent Reports
-- **Automation:** Selenium WebDriver
+- **Automation:** Playwright
 
 ---
 
