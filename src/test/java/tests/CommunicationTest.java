@@ -35,7 +35,7 @@ public class CommunicationTest extends BaseTest {
         System.out.println("Expected selected: " + expectedCount);
         System.out.println("Popup shows: " + patientCount);
 
-        //Assert.assertEquals(patientCount, expectedCount, "Popup count must be tileCount minus one");
+        Assert.assertEquals(patientCount, expectedCount, "Popup count must be tileCount minus one");
 
         dashboardPage().clickProfileImage();
         groupPage().openSMSGroupList();
